@@ -12,4 +12,7 @@ export default defineConfig({
         tailwindcss(),
         vue(),
     ],
+    server: {
+        port: 3000
+    },
 });

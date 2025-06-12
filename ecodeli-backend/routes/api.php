@@ -43,6 +43,7 @@ Route::get('test', function () {
 
 // Routes d'authentification
 Route::post('register', [Auth\AuthController::class, 'register']);
+Route::post('auth/register', [Auth\AuthController::class, 'register']);
 Route::post('login', [Auth\AuthController::class, 'login']);
 
 // Routes protégées par authentification

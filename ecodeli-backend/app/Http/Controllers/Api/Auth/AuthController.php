@@ -20,10 +20,11 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required_without:nom|string|max:255',
+            'nom' => 'required_without:name|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:client,livreur,prestataire,commercant',
+            'role' => 'sometimes|in:client,livreur,prestataire,commercant',
             'phone' => 'nullable|string',
             'address' => 'nullable|string',
             'city' => 'nullable|string',
@@ -33,10 +34,10 @@ class AuthController extends Controller
         ]);
 
         $user = User::create([
-            'name' => $validated['name'],
+            'name' => $validated['name'] ?? $validated['nom'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => $validated['role'],
+            'role' => $validated['role'] ?? 'client', // Default role
             'phone' => $validated['phone'] ?? null,
             'address' => $validated['address'] ?? null,
             'city' => $validated['city'] ?? null,
