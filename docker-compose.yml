@@ -1,4 +1,24 @@
+version: '3.8'
+
 services:
+  # Database service (MySQL)
+  ecodeli-db:
+    image: mysql:8.0
+    container_name: ecodeli-db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=ecodeli
+      - MYSQL_USER=ecodeli
+      - MYSQL_PASSWORD=ecodeli_password
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_ALLOW_EMPTY_PASSWORD=no
+    volumes:
+      - ecodeli-db-data:/var/lib/mysql
+    networks:
+      - ecodeli-network
+
   # Backend service (Laravel)
   ecodeli-backend:
     build:
@@ -15,6 +35,13 @@ services:
     environment:
       - APP_ENV=local
       - APP_DEBUG=true
+      - DB_HOST=ecodeli-db
+      - DB_PORT=3306
+      - DB_DATABASE=ecodeli
+      - DB_USERNAME=ecodeli
+      - DB_PASSWORD=ecodeli_password
+    depends_on:
+      - ecodeli-db
     networks:
       - ecodeli-network
 
@@ -39,3 +66,7 @@ services:
 networks:
   ecodeli-network:
     driver: bridge
+
+# Volumes
+volumes:
+  ecodeli-db-data:
