@@ -1,0 +1,344 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { toast } from 'react-toastify';
+import LivreurService from '../../api/livreur.service';
+import useAuthStore from '../../store/authStore';
+import { FaUserCircle, FaIdCard, FaUpload, FaFileDownload, FaSpinner } from 'react-icons/fa';
+
+const Profil = () => {
+  const { user, setUser } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+  const fileInputRef = useRef(null);
+  
+  // Formulaire
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    password: '',
+    password_confirmation: ''
+  });
+  
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+  
+  const fetchProfile = async () => {
+    try {
+      setIsLoading(true);
+      const response = await LivreurService.getProfil();
+      
+      if (response.data && response.data.success) {
+        const profilData = response.data.data;
+        setFormData({
+          name: profilData.name || '',
+          email: profilData.email || '',
+          phone: profilData.phone || '',
+          address: profilData.address || '',
+          password: '',
+          password_confirmation: ''
+        });
+        
+        // Mettre à jour les infos utilisateur dans le store
+        setUser({
+          ...user,
+          ...profilData
+        });
+      } else {
+        toast.error("Erreur lors de la récupération du profil");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération du profil:", error);
+      toast.error("Impossible de charger votre profil");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Ne pas envoyer le mot de passe si vide
+    const dataToSubmit = { ...formData };
+    if (!dataToSubmit.password) {
+      delete dataToSubmit.password;
+      delete dataToSubmit.password_confirmation;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      const response = await LivreurService.updateProfil(dataToSubmit);
+      
+      if (response.data && response.data.success) {
+        toast.success("Profil mis à jour avec succès");
+        
+        // Mettre à jour les infos utilisateur dans le store
+        setUser({
+          ...user,
+          ...response.data.data
+        });
+        
+        // Réinitialiser les champs de mot de passe
+        setFormData(prev => ({
+          ...prev,
+          password: '',
+          password_confirmation: ''
+        }));
+      } else {
+        toast.error(response.data?.message || "Erreur lors de la mise à jour du profil");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du profil:", error);
+      toast.error("Impossible de mettre à jour votre profil");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const handleDocumentUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Vérifier le type de fichier et la taille
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Type de fichier non supporté. Veuillez utiliser PDF, JPG ou PNG");
+      return;
+    }
+    
+    if (file.size > maxSize) {
+      toast.error("Le fichier est trop volumineux. La taille maximale est de 5MB");
+      return;
+    }
+    
+    try {
+      setUploadingDocument(true);
+      const response = await LivreurService.uploadDocument(file);
+      
+      if (response.data && response.data.success) {
+        toast.success("Document uploadé avec succès");
+        
+        // Mettre à jour les infos utilisateur dans le store
+        setUser({
+          ...user,
+          id_document: response.data.data.document
+        });
+      } else {
+        toast.error(response.data?.message || "Erreur lors de l'upload du document");
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'upload du document:", error);
+      toast.error("Impossible d'uploader votre document");
+    } finally {
+      setUploadingDocument(false);
+      // Réinitialiser l'input file
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+  
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Mon profil</h1>
+      
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Colonne de gauche: Informations de profil */}
+          <div className="md:col-span-2">
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                <FaUserCircle className="mr-2" />
+                Informations personnelles
+              </h2>
+              
+              <form onSubmit={handleSubmit}>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1">
+                        Nom complet
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className="w-full border rounded-md py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full border rounded-md py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1">
+                        Téléphone
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className="w-full border rounded-md py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1">
+                        Adresse
+                      </label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        className="w-full border rounded-md py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-lg font-semibold text-gray-800 mt-6 mb-4">
+                    Changer le mot de passe
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1">
+                        Nouveau mot de passe
+                      </label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="w-full border rounded-md py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        minLength="8"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Laissez vide pour ne pas modifier
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1">
+                        Confirmer le mot de passe
+                      </label>
+                      <input
+                        type="password"
+                        name="password_confirmation"
+                        value={formData.password_confirmation}
+                        onChange={handleChange}
+                        className="w-full border rounded-md py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end mt-6">
+                  <button
+                    type="submit"
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Sauvegarde en cours...' : 'Sauvegarder les changements'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          {/* Colonne de droite: Documents */}
+          <div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                <FaIdCard className="mr-2" />
+                Documents d'identité
+              </h2>
+              
+              {/* Section Documents d'identité */}
+              {user?.id_document ? (
+                <div>
+                  <p className="text-gray-700 mb-2">Document d'identité disponible</p>
+                  <div className="border rounded-md p-3 bg-gray-50 mb-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-gray-600 truncate">
+                        {user.id_document}
+                      </p>
+                      <a 
+                        href={`${process.env.REACT_APP_API_URL || ''}/storage/documents/${user.id_document}`}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded inline-flex items-center"
+                      >
+                        <FaFileDownload className="mr-2" /> Télécharger
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="mb-2 text-gray-600">Aucun document d'identité fourni</p>
+                  <input
+                    type="file"
+                    id="id_document"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleDocumentUpload}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current.click()}
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded inline-flex items-center"
+                    disabled={uploadingDocument}
+                  >
+                    {uploadingDocument ? (
+                      <>
+                        <FaSpinner className="animate-spin mr-2" /> Chargement...
+                      </>
+                    ) : (
+                      <>
+                        <FaUpload className="mr-2" /> Uploader un nouveau document
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+              
+              <p className="text-sm text-gray-500 mt-2">
+                Formats acceptés : PDF, JPG, PNG (max 5MB)
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Profil;

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test de fonctionnement</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 { color: #4a6f35; }
+    .container { 
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .button {
+      display: inline-block;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #fff;
+      min-height: 100px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Test de fonctionnement</h1>
+    <p>Cette page permet de vérifier si le site fonctionne correctement.</p>
+    
+    <p>Liens de test:</p>
+    <ul>
+      <li><a href="http://localhost:3000">Page d'accueil</a></li>
+      <li><a href="http://localhost:3000/login">Page de connexion</a></li>
+      <li><a href="http://localhost:3000/livreur/dashboard">Dashboard Livreur</a></li>
+    </ul>
+    
+    <button class="button" id="testButton">Tester la connexion au backend</button>
+    
+    <div class="result" id="resultContainer">
+      <p>Les résultats du test s'afficheront ici...</p>
+    </div>
+  </div>
+  
+  <script>
+    document.getElementById('testButton').addEventListener('click', async function() {
+      const resultContainer = document.getElementById('resultContainer');
+      resultContainer.innerHTML = '<p>Test en cours...</p>';
+      
+      try {
+        // Essayer d'accéder à une URL simple du backend
+        const response = await fetch('http://localhost:8000/api/health-check', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          resultContainer.innerHTML = `<p style="color: green;">✅ Le backend répond correctement!</p>
+                                      <pre>${JSON.stringify(data, null, 2)}</pre>`;
+        } else {
+          resultContainer.innerHTML = `<p style="color: orange;">⚠️ Le backend a répondu avec une erreur: ${response.status} ${response.statusText}</p>`;
+        }
+      } catch (error) {
+        resultContainer.innerHTML = `<p style="color: red;">❌ Erreur lors de la connexion au backend: ${error.message}</p>
+                                    <p>Assurez-vous que le serveur backend est démarré sur le port 8000.</p>`;
+      }
+      
+      // Ajouter des infos sur le navigateur
+      const browserInfo = document.createElement('div');
+      browserInfo.innerHTML = `
+        <h3>Informations navigateur:</h3>
+        <ul>
+          <li><strong>User Agent:</strong> ${navigator.userAgent}</li>
+          <li><strong>Langue:</strong> ${navigator.language}</li>
+          <li><strong>Cookies activés:</strong> ${navigator.cookieEnabled ? 'Oui' : 'Non'}</li>
+        </ul>
+      `;
+      resultContainer.appendChild(browserInfo);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Auth;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
+
+// ROUTES DE TEST POUR LIVREUR - Génère des données fictives pour debug
+
+// Route de test pour dashboard livreur
+Route::get('/livreur/dashboard', function() {
+    return response()->json([
+        'status' => 'success',
+        'data' => [
+            'stats' => [
+                'livraisons_en_cours' => 2,
+                'livraisons_completees' => 15,
+                'revenu_total' => 320.50,
+                'note_moyenne' => 4.8
+            ],
+            'recent_activities' => [
+                [
+                    'id' => 1,
+                    'type' => 'livraison_acceptee',
+                    'message' => 'Vous avez accepté une nouvelle livraison',
+                    'date' => now()->subHours(2)->toDateTimeString()
+                ],
+                [
+                    'id' => 2,
+                    'type' => 'paiement_recu',
+                    'message' => 'Vous avez reçu un paiement de 25€',
+                    'date' => now()->subDays(1)->toDateTimeString()
+                ]
+            ],
+            'notifications' => [
+                [
+                    'id' => 1,
+                    'message' => 'Nouvelle annonce disponible dans votre secteur',
+                    'is_read' => false,
+                    'date' => now()->subHours(1)->toDateTimeString()
+                ],
+                [
+                    'id' => 2,
+                    'message' => 'Votre profil a été consulté 5 fois cette semaine',
+                    'is_read' => true,
+                    'date' => now()->subDays(2)->toDateTimeString()
+                ]
+            ]
+        ]
+    ]);
+});
+
+// Route de test pour les livraisons livreur
+Route::get('/livreur/livraisons', function() {
+    return response()->json([
+        'status' => 'success',
+        'data' => [
+            [
+                'id' => 1,
+                'annonce_id' => 3,
+                'livreur_id' => 10,
+                'status' => 'accepted',
+                'start_date' => null,
+                'delivery_date' => null,
+                'tracking_code' => 'ECO-123456',
+                'notes' => 'Livraison test',
+                'created_at' => now()->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString(),
+                'annonce' => [
+                    'id' => 3,
+                    'title' => 'Livraison de produits frais',
+                    'description' => 'Livraison urgente de produits frais',
+                    'address' => '123 rue de Paris',
+                    'status' => 'published'
+                ]
+            ],
+            [
+                'id' => 2,
+                'annonce_id' => 5,
+                'livreur_id' => 10,
+                'status' => 'pending',
+                'start_date' => null,
+                'delivery_date' => null,
+                'tracking_code' => 'ECO-789012',
+                'notes' => 'Deuxième livraison test',
+                'created_at' => now()->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString(),
+                'annonce' => [
+                    'id' => 5,
+                    'title' => 'Livraison de colis urgent',
+                    'description' => 'Colis à livrer en priorité',
+                    'address' => '456 avenue des Champs',
+                    'status' => 'published'
+                ]
+            ]
+        ]
+    ]);
+});
+
+// Route de test pour les annonces livreur
+Route::get('/livreur/annonces', function() {
+    return response()->json([
+        'status' => 'success',
+        'data' => [
+            [
+                'id' => 1,
+                'title' => 'Livraison eco-responsable',
+                'description' => 'Livraison de produits bio dans Paris',
+                'type' => 'delivery',
+                'status' => 'published',
+                'price' => 25.99,
+                'created_at' => now()->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString()
+            ],
+            [
+                'id' => 2,
+                'title' => 'Colis express',
+                'description' => 'Livraison rapide de petit colis',
+                'type' => 'express',
+                'status' => 'published',
+                'price' => 15.50,
+                'created_at' => now()->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString()
+            ],
+            [
+                'id' => 3,
+                'title' => 'Livraison volumineuse',
+                'description' => 'Transport de meubles',
+                'type' => 'bulky',
+                'status' => 'published',
+                'price' => 45.00,
+                'created_at' => now()->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString()
+            ]
+        ]
+    ]);
+});
+
+// Routes d'authentification minimales
+Route::post('/auth/login', [Auth\AuthController::class, 'login']);
+Route::post('/login', [Auth\AuthController::class, 'login']);

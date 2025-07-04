@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avis Livraison EcoDeli</title>
+    <!-- Tailwind CSS via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Font Awesome pour les étoiles -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <!-- Axios pour les appels API -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-md">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="text-center mb-6">
+                <img src="/logo.png" alt="EcoDeli Logo" class="h-16 mx-auto mb-2">
+                <h1 class="text-2xl font-bold text-green-600">Évaluer votre livraison</h1>
+                <p class="text-gray-600 mt-2" id="livreur-name">Livraison par <span id="livreur-placeholder">...</span></p>
+            </div>
+
+            <div id="loading" class="flex justify-center my-8">
+                <svg class="animate-spin h-10 w-10 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+
+            <div id="error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"></div>
+            
+            <div id="review-form" class="hidden">
+                <div class="mb-6 text-center">
+                    <p class="mb-2 text-gray-700">Comment évaluez-vous cette livraison ?</p>
+                    <div class="star-rating flex justify-center space-x-3 text-3xl">
+                        <span class="star cursor-pointer" data-rating="1"><i class="far fa-star"></i></span>
+                        <span class="star cursor-pointer" data-rating="2"><i class="far fa-star"></i></span>
+                        <span class="star cursor-pointer" data-rating="3"><i class="far fa-star"></i></span>
+                        <span class="star cursor-pointer" data-rating="4"><i class="far fa-star"></i></span>
+                        <span class="star cursor-pointer" data-rating="5"><i class="far fa-star"></i></span>
+                    </div>
+                    <p class="mt-2 text-gray-500 hidden" id="rating-text"></p>
+                </div>
+                
+                <div class="mb-6">
+                    <label for="comment" class="block text-gray-700 mb-2">Commentaire (optionnel)</label>
+                    <textarea id="comment" rows="4" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+                </div>
+                
+                <button id="submit-button" disabled class="w-full py-3 bg-gray-400 text-white font-semibold rounded-lg shadow-md hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors cursor-not-allowed">
+                    Veuillez attribuer une note
+                </button>
+            </div>
+
+            <div id="success" class="hidden text-center py-6">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle text-green-500 text-6xl"></i>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800 mb-2">Merci pour votre avis !</h2>
+                <p class="text-gray-600 mb-6">Votre évaluation a été enregistrée avec succès.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const livraisonId = urlParams.get('livraison');
+            const livreurId = urlParams.get('livreur');
+            const nfcToken = urlParams.get('token');
+            
+            // Définition des éléments du DOM
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const formEl = document.getElementById('review-form');
+            const successEl = document.getElementById('success');
+            const submitButton = document.getElementById('submit-button');
+            const stars = document.querySelectorAll('.star');
+            const ratingText = document.getElementById('rating-text');
+            const commentEl = document.getElementById('comment');
+            const livreurNameEl = document.getElementById('livreur-placeholder');
+            
+            let selectedRating = 0;
+            
+            // Fonction pour montrer une erreur
+            function showError(message) {
+                loadingEl.classList.add('hidden');
+                errorEl.classList.remove('hidden');
+                errorEl.textContent = message;
+            }
+            
+            // Vérification des paramètres requis
+            if (!livraisonId || !livreurId || !nfcToken) {
+                showError("Lien invalide. Veuillez scanner à nouveau le code.");
+                return;
+            }
+            
+            // Récupérer les informations du livreur
+            axios.get(`/api/livreur/${livreurId}/reviews`)
+                .then(response => {
+                    if (response.data.success) {
+                        // Récupérer le nom du livreur à partir des données
+                        const livreurName = response.data.data.livreur_name || "votre livreur";
+                        livreurNameEl.textContent = livreurName;
+                        
+                        // Afficher le formulaire
+                        loadingEl.classList.add('hidden');
+                        formEl.classList.remove('hidden');
+                    } else {
+                        showError("Impossible de récupérer les informations du livreur.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Erreur lors de la récupération des informations du livreur:", error);
+                    showError("Une erreur s'est produite. Veuillez réessayer plus tard.");
+                });
+            
+            // Gestion des étoiles pour la note
+            stars.forEach(star => {
+                star.addEventListener('mouseover', function() {
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    highlightStars(rating);
+                });
+                
+                star.addEventListener('mouseout', function() {
+                    highlightStars(selectedRating);
+                });
+                
+                star.addEventListener('click', function() {
+                    selectedRating = parseInt(this.getAttribute('data-rating'));
+                    highlightStars(selectedRating);
+                    updateRatingText(selectedRating);
+                    
+                    // Activer le bouton de soumission
+                    submitButton.disabled = false;
+                    submitButton.classList.remove('bg-gray-400', 'hover:bg-gray-500', 'cursor-not-allowed');
+                    submitButton.classList.add('bg-green-600', 'hover:bg-green-700');
+                    submitButton.textContent = "Soumettre mon avis";
+                });
+            });
+            
+            function highlightStars(rating) {
+                stars.forEach(star => {
+                    const starRating = parseInt(star.getAttribute('data-rating'));
+                    const starIcon = star.querySelector('i');
+                    
+                    if (starRating <= rating) {
+                        starIcon.className = 'fas fa-star text-yellow-400';
+                    } else {
+                        starIcon.className = 'far fa-star text-gray-400';
+                    }
+                });
+            }
+            
+            function updateRatingText(rating) {
+                const texts = [
+                    "",
+                    "Très insatisfait",
+                    "Insatisfait",
+                    "Correct",
+                    "Satisfait",
+                    "Très satisfait"
+                ];
+                
+                ratingText.textContent = texts[rating];
+                ratingText.classList.remove('hidden');
+            }
+            
+            // Gestion de la soumission du formulaire
+            submitButton.addEventListener('click', function() {
+                if (selectedRating === 0) return;
+                
+                // Désactiver le bouton pendant la soumission
+                submitButton.disabled = true;
+                submitButton.textContent = "Envoi en cours...";
+                
+                // Préparer les données à envoyer
+                const reviewData = {
+                    livraison_id: livraisonId,
+                    rating: selectedRating,
+                    comment: commentEl.value.trim(),
+                    nfc_token: nfcToken
+                };
+                
+                // Envoyer l'avis
+                axios.post('/api/reviews', reviewData)
+                    .then(response => {
+                        if (response.data.success) {
+                            // Afficher le message de succès
+                            formEl.classList.add('hidden');
+                            successEl.classList.remove('hidden');
+                        } else {
+                            showError(response.data.message || "Erreur lors de l'envoi de l'avis.");
+                            submitButton.disabled = false;
+                            submitButton.textContent = "Soumettre mon avis";
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Erreur lors de la soumission de l'avis:", error);
+                        let errorMessage = "Une erreur s'est produite lors de l'envoi de votre avis.";
+                        
+                        if (error.response && error.response.data && error.response.data.message) {
+                            errorMessage = error.response.data.message;
+                        }
+                        
+                        showError(errorMessage);
+                        submitButton.disabled = false;
+                        submitButton.textContent = "Soumettre mon avis";
+                    });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+services:
+  # Database service (MySQL)
+  ecodeli-db:
+    image: mysql:8.0
+    container_name: ecodeli-db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=ecodeli
+      - MYSQL_USER=ecodeli
+      - MYSQL_PASSWORD=ecodeli_password
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_ALLOW_EMPTY_PASSWORD=no
+    volumes:
+      - ecodeli-db-data:/var/lib/mysql
+    networks:
+      - ecodeli-network
+
+  # Backend service (Laravel)
+  ecodeli-backend:
+    build:
+      context: ./ecodeli-backend
+      dockerfile: Dockerfile
+    container_name: ecodeli-backend
+    restart: unless-stopped
+    volumes:
+      - ./ecodeli-backend:/var/www
+      - /var/www/vendor
+      - /var/www/node_modules
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_HOST=ecodeli-db
+      - DB_PORT=3306
+      - DB_DATABASE=ecodeli
+      - DB_USERNAME=ecodeli
+      - DB_PASSWORD=ecodeli_password
+    depends_on:
+      - ecodeli-db
+    networks:
+      - ecodeli-network
+
+  # Frontend service (React)
+  ecodeli-frontend:
+    build:
+      context: ./ecodeli-frontend
+      dockerfile: Dockerfile
+    container_name: ecodeli-frontend
+    restart: unless-stopped
+    volumes:
+      - ./ecodeli-frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      - ecodeli-backend
+    networks:
+      - ecodeli-network
+
+# Networks
+networks:
+  ecodeli-network:
+    driver: bridge
+
+# Volumes
+volumes:
+  ecodeli-db-data:

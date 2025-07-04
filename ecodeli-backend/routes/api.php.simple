@@ -1,0 +1,46 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+// Routes de test ultra simplifiées pour debug
+Route::get('/api/livreur/dashboard', function () {
+    return '{"status":"success","data":{"stats":{"livraisons_en_cours":2,"livraisons_completees":15}}}';
+});
+
+Route::get('/api/api/livreur/dashboard', function () {
+    return '{"status":"success","data":{"stats":{"livraisons_en_cours":2,"livraisons_completees":15}}}';
+});
+
+Route::get('/api/livreur/livraisons', function () {
+    return '{"status":"success","data":[{"id":1,"status":"en_cours"},{"id":2,"status":"pending"}]}';
+});
+
+Route::get('/api/api/livreur/livraisons', function () {
+    return '{"status":"success","data":[{"id":1,"status":"en_cours"},{"id":2,"status":"pending"}]}';
+});
+
+Route::get('/api/livreur/annonces', function () {
+    return '{"status":"success","data":[{"id":1,"title":"Livraison eco-responsable"},{"id":2,"title":"Colis express"}]}';
+});
+
+Route::get('/api/api/livreur/annonces', function () {
+    return '{"status":"success","data":[{"id":1,"title":"Livraison eco-responsable"},{"id":2,"title":"Colis express"}]}';
+});
+
+// Routes avec paramètres
+Route::get('/api/livreur/annonces/{params}', function () {
+    return '{"status":"success","data":[{"id":1,"title":"Livraison eco-responsable"},{"id":2,"title":"Colis express"}]}';
+});
+
+Route::get('/api/api/livreur/annonces/{params}', function () {
+    return '{"status":"success","data":[{"id":1,"title":"Livraison eco-responsable"},{"id":2,"title":"Colis express"}]}';
+});
+
+Route::get('/api/livreur/livraisons/{params}', function () {
+    return '{"status":"success","data":[{"id":1,"status":"en_cours"},{"id":2,"status":"pending"}]}';
+});
+
+Route::get('/api/api/livreur/livraisons/{params}', function () {
+    return '{"status":"success","data":[{"id":1,"status":"en_cours"},{"id":2,"status":"pending"}]}';
+});
